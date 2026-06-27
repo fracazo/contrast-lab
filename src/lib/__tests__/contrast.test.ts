@@ -9,15 +9,13 @@ import assert from "node:assert/strict";
 
 import { analyze } from "../contrast";
 import { minFontSize } from "../apca";
+import { rawRatio } from "../wcag";
 
 const WCAG_TOL = 0.02;
 const LC_TOL = 0.1;
 
 const closeTo = (actual: number, expected: number, tol: number, label: string): void => {
-  assert.ok(
-    Math.abs(actual - expected) <= tol,
-    `${label}: expected ${expected} +/-${tol}, got ${actual}`,
-  );
+  assert.ok(Math.abs(actual - expected) <= tol, `${label}: expected ${expected} +/-${tol}, got ${actual}`);
 };
 
 // --- WCAG ratio --------------------------------------------------------------
@@ -71,29 +69,44 @@ for (const [fg, bg, expected] of APCA_FIXTURES) {
 
 // --- Nearest passing (target WCAG AA = 4.5) ----------------------------------
 
-test("nearest passing: #ffa500 on #fff darkens to ~#a66a00 at ratio ~4.5", () => {
+test("nearest passing: #ffa500 on #fff returns a real, different amber whose rounded hex clears 4.5", () => {
   const { fixForWcagAA } = analyze({ foreground: "#ffa500", background: "#ffffff" });
-  assert.equal(fixForWcagAA.hex, "#a66a00");
-  assert.ok(fixForWcagAA.achievable);
-  closeTo(fixForWcagAA.ratio, 4.5, WCAG_TOL, "fix ratio #ffa500/#fff");
-  assert.ok(fixForWcagAA.ratio >= 4.5 - WCAG_TOL, "fix should reach the 4.5 target");
+  assert.equal(fixForWcagAA.alreadyPasses, false);
+  assert.match(fixForWcagAA.hex, /^#[0-9a-f]{6}$/);
+  assert.notEqual(fixForWcagAA.hex.toLowerCase(), "#ffa500");
+  assert.ok(rawRatio(fixForWcagAA.hex, "#ffffff") >= 4.5, `returned hex ${fixForWcagAA.hex} must clear 4.5`);
 });
 
-test("nearest passing: #1d4ed8 on dark #0a0a0a lightens to ~#376efa at ratio ~4.5", () => {
+test("nearest passing: #1d4ed8 on dark #0a0a0a lightens to #376efa whose rounded hex clears 4.5", () => {
   const { fixForWcagAA } = analyze({ foreground: "#1d4ed8", background: "#0a0a0a" });
   assert.equal(fixForWcagAA.hex, "#376efa");
-  assert.ok(fixForWcagAA.achievable);
+  assert.equal(fixForWcagAA.alreadyPasses, false);
   closeTo(fixForWcagAA.ratio, 4.5, WCAG_TOL, "fix ratio #1d4ed8/#0a0a0a");
+  assert.ok(rawRatio(fixForWcagAA.hex, "#0a0a0a") >= 4.5, `returned hex ${fixForWcagAA.hex} must clear 4.5`);
 });
 
-test("nearest passing: #777777 on #fff nudge is sub-hex, assert ratio >= 4.5", () => {
+test("nearest passing: #777777 on #fff returns a real, different hex that clears 4.5 after rounding", () => {
   const { fixForWcagAA } = analyze({ foreground: "#777777", background: "#ffffff" });
-  assert.ok(fixForWcagAA.achievable);
-  assert.ok(
-    fixForWcagAA.ratio >= 4.5 - WCAG_TOL,
-    `expected ratio >= 4.5, got ${fixForWcagAA.ratio}`,
-  );
-  assert.match(fixForWcagAA.oklch, /^oklch\(/);
+  assert.equal(fixForWcagAA.alreadyPasses, false);
+  assert.match(fixForWcagAA.hex, /^#[0-9a-f]{6}$/);
+  // The returned hex itself must clear AA after 8-bit rounding, not just the continuous candidate.
+  assert.ok(rawRatio(fixForWcagAA.hex, "#ffffff") >= 4.5, `returned hex ${fixForWcagAA.hex} must clear 4.5`);
+  // #777777 sits at 4.48; the real one-step-darker fix must differ from the input.
+  assert.notEqual(fixForWcagAA.hex.toLowerCase(), "#777777");
+});
+
+test("nearest passing: #000000 on #fff already passes (alreadyPasses, no change needed)", () => {
+  const { fixForWcagAA } = analyze({ foreground: "#000000", background: "#ffffff" });
+  assert.equal(fixForWcagAA.alreadyPasses, true);
+  assert.match(fixForWcagAA.hex, /^#[0-9a-f]{6}$/);
+  assert.notEqual(fixForWcagAA.hex, "");
+});
+
+test("nearest passing: #ffff00 on #fff returns a real fix (dark olive) whose hex clears 4.5", () => {
+  const { fixForWcagAA } = analyze({ foreground: "#ffff00", background: "#ffffff" });
+  assert.equal(fixForWcagAA.alreadyPasses, false);
+  assert.notEqual(fixForWcagAA.hex.toLowerCase(), "#ffff00");
+  assert.ok(rawRatio(fixForWcagAA.hex, "#ffffff") >= 4.5, `fix ${fixForWcagAA.hex} must clear 4.5`);
 });
 
 // --- APCA font-size threshold sanity -----------------------------------------

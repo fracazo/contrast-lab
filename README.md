@@ -2,11 +2,13 @@
 
 A Raycast extension for checking color contrast. It does both WCAG 2 and the newer APCA model, takes colors in hex, RGB, HSL, or OKLCH, and when a pair fails it suggests the nearest passing color.
 
+## Install
+
+[Install from the Raycast Store](https://www.raycast.com/fracazo/contrast-lab) — _link goes live once the listing is approved._
+
 ## Status
 
-Building this core-first. Right now the repo is just the color library, fully tested, no UI yet. The Raycast command (a form for input, a detail view for results) comes next and wires into `analyze()`.
-
-The scaffolded `check-contrast` command is left as-is for now so the extension still loads under `npm run dev`.
+Shipped as one command: a form for the foreground and background colors (plus font size and weight) with a live readout that updates as you type, and a result view with a preview swatch, the WCAG AA/AAA tags, the APCA Lc, and a one-tap nearest-passing fix you can copy when the pair fails. It all wires into the pure, fully tested `analyze()` core below.
 
 ## The library
 
@@ -34,7 +36,7 @@ const result = analyze({
 
 result.wcag.ratio;        // 1.97
 result.apca.lc;           // 37.69 (signed; negative means light text on a dark bg)
-result.fixForWcagAA.hex;  // "#a66a00", the nearest foreground that clears AA
+result.fixForWcagAA.hex;  // "#a56900", the nearest foreground that clears AA
 ```
 
 Both colors accept hex (3/4/6/8 digit), `rgb()`, `hsl()`, and `oklch()`. If either one can't be parsed, you get back `{ valid: false }` with an error message instead of garbage numbers.

@@ -29,12 +29,7 @@ export function minFontSize(absLc: number, weight: ApcaWeight): number | null {
 }
 
 /** Full APCA evaluation for a given foreground/background and text style. */
-export function evaluateApca(
-  fg: string,
-  bg: string,
-  fontSizePx: number,
-  fontWeight: ApcaWeight,
-): ApcaResult {
+export function evaluateApca(fg: string, bg: string, fontSizePx: number, fontWeight: ApcaWeight): ApcaResult {
   const lc = apcaLc(fg, bg);
   const absLc = Math.abs(lc);
   const minFontPx = minFontSize(absLc, fontWeight);
