@@ -1,37 +1,24 @@
 # Contrast Lab
 
-A Raycast extension for checking color contrast with **both WCAG 2 and APCA**,
-accepting **HEX / RGB / HSL / OKLCH**, and suggesting the **nearest passing color**.
+A Raycast extension for checking color contrast. It does both WCAG 2 and the newer APCA model, takes colors in hex, RGB, HSL, or OKLCH, and when a pair fails it suggests the nearest passing color.
 
-## Project status
+## Status
 
-This repo is built logic-first: a pure, framework-free color library, fully
-unit-tested against reference values, **before any UI**.
+Building this core-first. Right now the repo is just the color library, fully tested, no UI yet. The Raycast command (a form for input, a detail view for results) comes next and wires into `analyze()`.
 
-- **Spec 1 — Verified Core Library (this milestone):** a pure TypeScript color
-  library under [`src/lib`](src/lib) that computes WCAG 2 ratios + AA/AAA levels,
-  signed APCA Lc + font-size/weight thresholds, and the nearest passing
-  foreground color (binary search in OKLCH). No UI. Every result is asserted
-  against verified fixtures computed from the pinned dependency versions.
-- **Spec 2 — UI (later):** a Raycast Form command for input and a Detail view
-  for results, wiring `analyze()` into the extension.
+The scaffolded `check-contrast` command is left as-is for now so the extension still loads under `npm run dev`.
 
-The scaffolded `check-contrast` command is intentionally left untouched in this
-milestone, so the extension still loads via `npm run dev`.
+## The library
 
-## The core library
+Everything lives in [`src/lib`](src/lib). It's pure TypeScript with no `@raycast/api` or React imports, so it runs under Node's test runner and could be dropped into any project.
 
-Everything lives in [`src/lib`](src/lib) and is **pure** — it imports no
-`@raycast/api`, React, or Raycast modules, so it is portable and testable with
-Node's built-in test runner.
-
-| File | Responsibility |
+| File | What it does |
 | --- | --- |
-| [`color.ts`](src/lib/color.ts) | parse, OKLCH conversion, sRGB gamut mapping, hex/oklch formatting, luminance |
-| [`wcag.ts`](src/lib/wcag.ts) | WCAG 2 contrast ratio + AA/AAA level checks |
-| [`apca.ts`](src/lib/apca.ts) | signed APCA Lc + font size/weight threshold lookup |
-| [`fix.ts`](src/lib/fix.ts) | nearest passing color (binary search in OKLCH) |
-| [`contrast.ts`](src/lib/contrast.ts) | public surface: `analyze(input) -> ContrastResult` |
+| [`color.ts`](src/lib/color.ts) | parsing, OKLCH conversion, sRGB gamut mapping, formatting, luminance |
+| [`wcag.ts`](src/lib/wcag.ts) | WCAG 2 ratio and AA/AAA checks |
+| [`apca.ts`](src/lib/apca.ts) | signed APCA Lc and the font size/weight thresholds |
+| [`fix.ts`](src/lib/fix.ts) | nearest passing color, found by searching lightness in OKLCH |
+| [`contrast.ts`](src/lib/contrast.ts) | the entry point: `analyze(input)` |
 
 ### Usage
 
@@ -41,33 +28,29 @@ import { analyze } from "./src/lib/contrast";
 const result = analyze({
   foreground: "#ffa500",
   background: "#ffffff",
-  fontSizePx: 16, // optional, default 16
-  fontWeight: 400, // optional, default 400
+  fontSizePx: 16, // optional, defaults to 16
+  fontWeight: 400, // optional, defaults to 400
 });
 
-result.wcag.ratio; // 1.97
-result.apca.lc; // 37.69  (signed; negative = light text on dark bg)
-result.fixForWcagAA.hex; // "#a66a00" (nearest foreground passing WCAG AA at 4.5)
+result.wcag.ratio;        // 1.97
+result.apca.lc;           // 37.69 (signed; negative means light text on a dark bg)
+result.fixForWcagAA.hex;  // "#a66a00", the nearest foreground that clears AA
 ```
 
-`analyze()` accepts hex (3/4/6/8), `rgb()/rgba()`, `hsl()/hsla()`, and `oklch()`
-for both colors. If either color fails to parse it returns `{ valid: false }`
-with a helpful `error` and zeroed sub-results.
+Both colors accept hex (3/4/6/8 digit), `rgb()`, `hsl()`, and `oklch()`. If either one can't be parsed, you get back `{ valid: false }` with an error message instead of garbage numbers.
 
-## Running the tests
+## APCA notes
 
-The library is verified against reference values from the pinned dependency
-versions (`culori@4.0.2`, `apca-w3@0.1.9`, `colorparsley@0.1.8`). Tests run on
-Node's built-in test runner via `tsx`:
+APCA returns a signed Lc value rather than a ratio: positive for dark text on a light background, negative for the reverse. Because it accounts for font size and weight, the pass/fail check needs both, which is why `analyze()` takes them. Small or thin text needs a higher Lc than large or bold text at the same colors.
+
+## Tests
 
 ```sh
 npm install
 npm test
 ```
 
-`npm test` runs `node --import tsx --test "src/lib/**/*.test.ts"`. The expected
-fixture values are intentionally hard-coded; a mismatch indicates a dependency
-version drifted rather than a test that needs editing.
+That runs `node --import tsx --test "src/lib/**/*.test.ts"`. The expected values are pinned to specific versions of culori, apca-w3, and colorparsley, so if a test fails it usually means one of those changed its output, not that the test is wrong.
 
 ## License
 
