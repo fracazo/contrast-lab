@@ -2,12 +2,12 @@
 
 A Raycast extension for checking color contrast. It does both WCAG 2 and the newer APCA model, takes colors in hex, RGB, HSL, or OKLCH, and when a pair fails it suggests the nearest passing color.
 
-<img width="1000" height="625" alt="contrast-lab-1" src="https://github.com/user-attachments/assets/d8b8a0a9-2314-4c54-9dee-7f25ca8d6b61" />
-<img width="1000" height="625" alt="contrast-lab-2" src="https://github.com/user-attachments/assets/16b955c5-efd2-4dfc-9a91-93bcdafa3852" />
+<img width="1000" alt="Contrast Preview result view with WCAG and APCA verdicts and the suggested fix" src="metadata/contrast-lab-1.png" />
+<img width="1000" alt="Check Contrast form with a live WCAG and APCA readout" src="metadata/contrast-lab-2.png" />
 
 ## Install
 
-[Install from the Raycast Store](https://www.raycast.com/fracazo/contrast-lab) - _link goes live once the listing is approved._
+[Install from the Raycast Store](https://www.raycast.com/fracazo/contrast-lab)
 
 ## Status
 
